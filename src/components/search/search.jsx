@@ -14,16 +14,17 @@ export function Search() {
         <input
           type="text"
           placeholder="Search..."
-          className={`w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg outline-none transition-all duration-300 ease-in-out ${
+          className={`w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg outline-none transition-all duration-300 ease-in-out ${
             isExpanded ? "opacity-100" : "opacity-0"
           }`}
         />
       </div>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+        className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+        aria-label="Toggle search"
       >
-        <SearchIcon className="w-5 h-5" />
+        <SearchIcon className="w-4 h-4" />
       </button>
     </div>
   );
