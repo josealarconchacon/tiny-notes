@@ -1,5 +1,4 @@
 import { useState } from "react";
-import CATEGORIES from "../../constants/categoty";
 import { Trash2 } from "lucide-react";
 
 const Note = ({ note, onDelete, onEdit, categories }) => {

@@ -6,13 +6,61 @@ const FormattingToolbar = ({ editorRef }) => {
     bold: false,
     italic: false,
     underline: false,
+    strikethrough: false,
     list: false,
     orderedList: false,
     align: "left",
-    heading: null,
+    heading: "",
     isCode: false,
     isQuote: false,
+    fontFamily: "",
+    fontSize: "",
+    textColor: "",
+    highlightColor: "",
   });
+
+  const updateActiveFormats = () => {
+    if (!editorRef.current) return;
+
+    // Get the current selection
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const element =
+      container.nodeType === 3 ? container.parentElement : container;
+
+    // Get computed styles for the selected element
+    const computedStyle = window.getComputedStyle(element);
+
+    const formats = {
+      bold:
+        computedStyle.fontWeight === "700" ||
+        computedStyle.fontWeight === "bold",
+      italic: computedStyle.fontStyle === "italic",
+      underline: computedStyle.textDecoration.includes("underline"),
+      strikethrough: computedStyle.textDecoration.includes("line-through"),
+      list: element.closest("ul") !== null,
+      orderedList: element.closest("ol") !== null,
+      align: computedStyle.textAlign,
+      heading: null,
+      isCode: element.closest("pre") !== null,
+      isQuote: element.closest("blockquote") !== null,
+      fontFamily: computedStyle.fontFamily.replace(/['"]/g, ""),
+      fontSize: computedStyle.fontSize,
+      textColor: computedStyle.color,
+      highlightColor: computedStyle.backgroundColor,
+    };
+
+    // Check for heading level
+    const headingMatch = element.tagName.toLowerCase().match(/^h([1-6])$/);
+    if (headingMatch) {
+      formats.heading = parseInt(headingMatch[1]);
+    }
+
+    setActiveFormats(formats);
+  };
 
   // Update active formats when selection changes
   useEffect(() => {
@@ -23,48 +71,89 @@ const FormattingToolbar = ({ editorRef }) => {
       const selection = window.getSelection();
       if (!selection || !selection.rangeCount) return;
 
-      const parentElement = selection.getRangeAt(0).commonAncestorContainer;
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const element =
+        container.nodeType === 3 ? container.parentElement : container;
+
+      // Get computed styles for the selected element
+      const computedStyle = window.getComputedStyle(element);
+
       const formats = {
-        bold: document.queryCommandState("bold"),
-        italic: document.queryCommandState("italic"),
-        underline: document.queryCommandState("underline"),
-        list: document.queryCommandState("insertUnorderedList"),
-        orderedList: document.queryCommandState("insertOrderedList"),
-        align: "left",
+        bold:
+          computedStyle.fontWeight === "700" ||
+          computedStyle.fontWeight === "bold",
+        italic: computedStyle.fontStyle === "italic",
+        underline: computedStyle.textDecoration.includes("underline"),
+        strikethrough: computedStyle.textDecoration.includes("line-through"),
+        list: element.closest("ul") !== null,
+        orderedList: element.closest("ol") !== null,
+        align: computedStyle.textAlign,
         heading: null,
-        isCode: false,
-        isQuote: false,
+        isCode: element.closest("pre") !== null,
+        isQuote: element.closest("blockquote") !== null,
+        fontFamily: computedStyle.fontFamily.replace(/['"]/g, ""),
+        fontSize: computedStyle.fontSize,
+        textColor: computedStyle.color,
+        highlightColor: computedStyle.backgroundColor,
       };
 
-      // Check alignment
-      if (document.queryCommandState("justifyLeft")) formats.align = "left";
-      if (document.queryCommandState("justifyCenter")) formats.align = "center";
-      if (document.queryCommandState("justifyRight")) formats.align = "right";
-
-      // Check for block-level formatting
-      let element =
-        parentElement.nodeType === 3
-          ? parentElement.parentElement
-          : parentElement;
-      while (element && element !== editorRef.current) {
-        const tagName = element.tagName.toLowerCase();
-        if (tagName.match(/^h[1-6]$/)) {
-          formats.heading = parseInt(tagName[1]);
-        } else if (tagName === "pre") {
-          formats.isCode = true;
-        } else if (tagName === "blockquote") {
-          formats.isQuote = true;
-        }
-        element = element.parentElement;
+      // Check for heading level
+      const headingMatch = element.tagName.toLowerCase().match(/^h([1-6])$/);
+      if (headingMatch) {
+        formats.heading = parseInt(headingMatch[1]);
       }
 
       setActiveFormats(formats);
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const listItem = range.startContainer.parentElement.closest("li");
+
+        if (listItem) {
+          e.preventDefault();
+
+          // If the list item is empty, remove it and create a new paragraph
+          if (listItem.textContent.trim() === "") {
+            const list = listItem.parentElement;
+            const paragraph = document.createElement("p");
+            listItem.parentNode.replaceChild(paragraph, listItem);
+
+            // If this was the last item, remove the list
+            if (list.children.length === 0) {
+              list.remove();
+            }
+
+            // Move cursor to the new paragraph
+            range.setStart(paragraph, 0);
+            range.setEnd(paragraph, 0);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } else {
+            // Create a new list item
+            const newListItem = document.createElement("li");
+            listItem.parentNode.insertBefore(newListItem, listItem.nextSibling);
+
+            // Move cursor to the new list item
+            range.setStart(newListItem, 0);
+            range.setEnd(newListItem, 0);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+      }
     };
 
     const editor = editorRef.current;
     if (editor) {
       editor.addEventListener("keyup", updateActiveFormats);
       editor.addEventListener("mouseup", updateActiveFormats);
+      editor.addEventListener("keydown", handleKeyDown);
       document.addEventListener("selectionchange", updateActiveFormats);
     }
 
@@ -72,6 +161,7 @@ const FormattingToolbar = ({ editorRef }) => {
       if (editor) {
         editor.removeEventListener("keyup", updateActiveFormats);
         editor.removeEventListener("mouseup", updateActiveFormats);
+        editor.removeEventListener("keydown", handleKeyDown);
         document.removeEventListener("selectionchange", updateActiveFormats);
       }
     };
@@ -86,51 +176,104 @@ const FormattingToolbar = ({ editorRef }) => {
     }
 
     try {
-      // Save the current selection
       const selection = window.getSelection();
-      if (!selection) return;
+      if (!selection || !selection.rangeCount) return;
 
-      let range = null;
-      if (selection.rangeCount > 0) {
-        range = selection.getRangeAt(0);
-      } else {
-        // If no range exists, create one at the end of the editor
-        range = document.createRange();
-        range.selectNodeContents(editorRef.current);
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const element =
+        container.nodeType === 3 ? container.parentElement : container;
+
+      if (!element) return;
+
+      switch (command) {
+        case "bold":
+          element.style.fontWeight =
+            element.style.fontWeight === "bold" ? "normal" : "bold";
+          break;
+        case "italic":
+          element.style.fontStyle =
+            element.style.fontStyle === "italic" ? "normal" : "italic";
+          break;
+        case "underline":
+          element.style.textDecoration =
+            element.style.textDecoration === "underline" ? "none" : "underline";
+          break;
+        case "strikethrough":
+          element.style.textDecoration =
+            element.style.textDecoration === "line-through"
+              ? "none"
+              : "line-through";
+          break;
+        case "insertUnorderedList":
+          const parentList = element.closest("ul");
+          if (parentList) {
+            // Convert list items to paragraphs
+            const listItems = parentList.querySelectorAll("li");
+            listItems.forEach((item) => {
+              const p = document.createElement("p");
+              p.textContent = item.textContent;
+              item.parentNode.replaceChild(p, item);
+            });
+            parentList.remove();
+          } else {
+            // Create new list
+            const list = document.createElement("ul");
+            const listItem = document.createElement("li");
+            if (!range.collapsed) {
+              listItem.textContent = range.toString();
+              range.deleteContents();
+            }
+            list.appendChild(listItem);
+            range.insertNode(list);
+            range.setStart(listItem, 0);
+            range.setEnd(listItem, 0);
+          }
+          break;
+        case "insertOrderedList":
+          const parentOrderedList = element.closest("ol");
+          if (parentOrderedList) {
+            // Convert list items to paragraphs
+            const listItems = parentOrderedList.querySelectorAll("li");
+            listItems.forEach((item) => {
+              const p = document.createElement("p");
+              p.textContent = item.textContent;
+              item.parentNode.replaceChild(p, item);
+            });
+            parentOrderedList.remove();
+          } else {
+            // Create new list
+            const list = document.createElement("ol");
+            const listItem = document.createElement("li");
+            if (!range.collapsed) {
+              listItem.textContent = range.toString();
+              range.deleteContents();
+            }
+            list.appendChild(listItem);
+            range.insertNode(list);
+            range.setStart(listItem, 0);
+            range.setEnd(listItem, 0);
+          }
+          break;
+        case "justifyLeft":
+          element.style.textAlign = "left";
+          break;
+        case "justifyCenter":
+          element.style.textAlign = "center";
+          break;
+        case "justifyRight":
+          element.style.textAlign = "right";
+          break;
+        default:
+          console.warn(`Unhandled command: ${command}`);
+          break;
       }
 
-      // Apply the formatting command
-      document.execCommand(command, false, value);
-
-      // Restore the selection
-      if (range) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-
-      // Update active formats
-      const formats = {
-        bold: document.queryCommandState("bold"),
-        italic: document.queryCommandState("italic"),
-        underline: document.queryCommandState("underline"),
-        list: document.queryCommandState("insertUnorderedList"),
-        orderedList: document.queryCommandState("insertOrderedList"),
-        align: "left",
-        heading: activeFormats.heading,
-        isCode: activeFormats.isCode,
-        isQuote: activeFormats.isQuote,
-      };
-
-      if (document.queryCommandState("justifyLeft")) formats.align = "left";
-      if (document.queryCommandState("justifyCenter")) formats.align = "center";
-      if (document.queryCommandState("justifyRight")) formats.align = "right";
-
-      setActiveFormats(formats);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      updateActiveFormats();
     } catch (error) {
-      console.error("Error applying format:", error);
+      console.error("Error applying formatting:", error);
     }
   };
 
@@ -143,20 +286,68 @@ const FormattingToolbar = ({ editorRef }) => {
 
       const range = selection.getRangeAt(0);
       const container = range.commonAncestorContainer;
-      const blockElement =
+      const element =
         container.nodeType === 3 ? container.parentElement : container;
 
-      // If we're already in the desired block type, remove it
-      if (blockElement.tagName.toLowerCase() === tag.toLowerCase()) {
-        document.execCommand("formatBlock", false, "p");
+      if (!element) return;
+
+      // If we're already in the desired block type, convert to paragraph
+      if (element.tagName.toLowerCase() === tag.toLowerCase()) {
+        const p = document.createElement("p");
+        p.textContent = element.textContent;
+        element.parentNode.replaceChild(p, element);
       } else {
-        document.execCommand("formatBlock", false, tag);
-        if (className && blockElement.classList) {
-          blockElement.classList.add(className);
+        const newBlock = document.createElement(tag);
+        if (className) {
+          newBlock.className = className;
         }
+        newBlock.textContent = element.textContent;
+        element.parentNode.replaceChild(newBlock, element);
       }
+
+      updateActiveFormats();
     } catch (error) {
       console.error("Error applying block format:", error);
+    }
+  };
+
+  const formatFont = (property, value) => {
+    if (!editorRef.current) return;
+
+    try {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const element =
+        container.nodeType === 3 ? container.parentElement : container;
+
+      if (!element) return;
+
+      switch (property) {
+        case "fontName":
+          element.style.fontFamily = value;
+          break;
+        case "fontSize":
+          element.style.fontSize = value;
+          break;
+        case "foreColor":
+          element.style.color = value;
+          break;
+        case "hiliteColor":
+          element.style.backgroundColor = value;
+          break;
+        default:
+          console.warn(`Unhandled font property: ${property}`);
+          break;
+      }
+
+      selection.removeAllRanges();
+      selection.addRange(range);
+      updateActiveFormats();
+    } catch (error) {
+      console.error("Error applying font format:", error);
     }
   };
 
@@ -165,6 +356,7 @@ const FormattingToolbar = ({ editorRef }) => {
       activeFormats={activeFormats}
       formatText={formatText}
       formatBlock={formatBlock}
+      formatFont={formatFont}
     />
   );
 };

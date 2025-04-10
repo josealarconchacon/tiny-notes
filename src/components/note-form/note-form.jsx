@@ -30,6 +30,7 @@ const NoteForm = ({ onAddNote, categories }) => {
       if (!editorRef.current || document.activeElement !== editorRef.current)
         return;
 
+      // Google Docs-like keyboard shortcuts
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
         switch (e.key.toLowerCase()) {
           case "b":
@@ -43,6 +44,79 @@ const NoteForm = ({ onAddNote, categories }) => {
           case "u":
             e.preventDefault();
             document.execCommand("underline", false, null);
+            break;
+          case "k":
+            e.preventDefault();
+            const url = prompt("Enter the URL:", "https://");
+            if (url) document.execCommand("createLink", false, url);
+            break;
+          case "1":
+          case "2":
+          case "3":
+          case "4":
+          case "5":
+          case "6":
+            e.preventDefault();
+            document.execCommand("formatBlock", false, `h${e.key}`);
+            break;
+          case "0":
+            e.preventDefault();
+            document.execCommand("formatBlock", false, "p");
+            break;
+          case "l":
+            e.preventDefault();
+            document.execCommand("justifyLeft", false, null);
+            break;
+          case "e":
+            e.preventDefault();
+            document.execCommand("justifyCenter", false, null);
+            break;
+          case "r":
+            e.preventDefault();
+            document.execCommand("justifyRight", false, null);
+            break;
+          case "7":
+            e.preventDefault();
+            document.execCommand("insertUnorderedList", false, null);
+            break;
+          case "8":
+            e.preventDefault();
+            document.execCommand("insertOrderedList", false, null);
+            break;
+          case "9":
+            e.preventDefault();
+            document.execCommand("strikethrough", false, null);
+            break;
+          default:
+            break;
+        }
+      }
+
+      // Handle Shift+Ctrl/Cmd shortcuts
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
+        switch (e.key.toLowerCase()) {
+          case "c":
+            e.preventDefault();
+            // Copy formatting
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              const span = document.createElement("span");
+              span.appendChild(range.cloneContents());
+              const formattedText = span.innerHTML;
+              navigator.clipboard.writeText(formattedText);
+            }
+            break;
+          case "v":
+            e.preventDefault();
+            // Paste without formatting
+            const text = navigator.clipboard.readText();
+            document.execCommand("insertText", false, text);
+            break;
+          case "x":
+            e.preventDefault();
+            // Cut
+            document.execCommand("cut", false, null);
             break;
           default:
             break;
