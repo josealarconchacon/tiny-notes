@@ -11,6 +11,7 @@ const Header = ({
   setActiveCategory,
   addCategory,
   handleDeleteCategory,
+  onSearch,
 }) => {
   return (
     <header className="mb-6">
@@ -24,7 +25,11 @@ const Header = ({
               Offline Mode
             </span>
           )}
-          <ThemeToggle darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          <ThemeToggle
+            darkMode={darkMode}
+            toggleDarkMode={toggleDarkMode}
+            onSearch={onSearch}
+          />
         </div>
       </div>
       <CategoryFilter

@@ -1,10 +1,10 @@
 import { Sun, Moon } from "lucide-react";
 import { Search } from "../search/search";
 
-const ThemeToggle = ({ darkMode, toggleDarkMode }) => {
+const ThemeToggle = ({ darkMode, toggleDarkMode, onSearch }) => {
   return (
     <div className="flex items-center gap-2">
-      <Search />
+      <Search onSearch={onSearch} />
       <button
         onClick={toggleDarkMode}
         className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700"

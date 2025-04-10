@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { CirclePlus } from "lucide-react";
-import CATEGORIES from "../../constants/categoty";
 
 const NoteForm = ({ onAddNote, categories }) => {
   const [content, setContent] = useState("");

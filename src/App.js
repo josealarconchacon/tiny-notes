@@ -6,10 +6,11 @@ import Header from "./components/header/header";
 import NotesList from "./components/notes-list/notes-list";
 import Footer from "./components/footer/footer";
 
-function App() {
+const App = () => {
   const [notes, setNotes] = useLocalStorage("tinyNotes", []);
   const [darkMode, setDarkMode] = useLocalStorage("darkMode", false);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [offlineStatus, setOfflineStatus] = useState(navigator.onLine);
   const { categories, addCategory, deleteCategory } = useCategories();
 
@@ -90,10 +91,21 @@ function App() {
     }
   };
 
-  const filteredNotes =
-    activeCategory === "all"
-      ? notes
-      : notes.filter((note) => note.category === activeCategory);
+  const filteredNotes = notes.filter((note) => {
+    // First filter by category
+    if (activeCategory !== "all" && note.category !== activeCategory) {
+      return false;
+    }
+
+    // Then filter by search query if one exists
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const contentLower = note.content.toLowerCase();
+      return contentLower.includes(searchLower);
+    }
+
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
@@ -107,6 +119,7 @@ function App() {
           setActiveCategory={setActiveCategory}
           addCategory={addCategory}
           handleDeleteCategory={handleDeleteCategory}
+          onSearch={setSearchQuery}
         />
 
         <main>
@@ -124,6 +137,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 export default App;
