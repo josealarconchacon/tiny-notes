@@ -2,13 +2,11 @@ import useLocalStorage from "./local-storage";
 import CATEGORIES from "../constants/categoty";
 
 const useCategories = () => {
-  // Initialize categories from local storage or use default categories
   const [categories, setCategories] = useLocalStorage(
     "tinyNotesCategories",
     CATEGORIES
   );
 
-  // Add a new category
   const addCategory = (id, label, icon) => {
     const newKey = id.toUpperCase();
     setCategories({
@@ -17,7 +15,6 @@ const useCategories = () => {
     });
   };
 
-  // Delete a category
   const deleteCategory = (categoryId) => {
     const updatedCategories = { ...categories };
     const keyToDelete = Object.keys(updatedCategories).find(
@@ -32,5 +29,4 @@ const useCategories = () => {
 
   return { categories, addCategory, deleteCategory };
 };
-
 export default useCategories;

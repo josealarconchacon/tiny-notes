@@ -6,12 +6,14 @@ import NoteForm from "./components/note-form/note-form";
 import CategoryFilter from "./components/filter/filter";
 import EmptyState from "./components/empty-state/empty-state";
 import ThemeToggle from "./components/theme-toggle/theme-toggle";
+import useCategories from "./hook/managing-categories";
 
-const App = () => {
+function App() {
   const [notes, setNotes] = useLocalStorage("tinyNotes", []);
   const [darkMode, setDarkMode] = useLocalStorage("darkMode", false);
   const [activeCategory, setActiveCategory] = useState("all");
   const [offlineStatus, setOfflineStatus] = useState(navigator.onLine);
+  const { categories, addCategory, deleteCategory } = useCategories();
 
   // Handle offline/online status
   useEffect(() => {
@@ -58,6 +60,23 @@ const App = () => {
     );
   };
 
+  // When a category is deleted, change the category of affected notes to 'general'
+  const handleDeleteCategory = (categoryId) => {
+    // First, update any notes that use this category
+    const updatedNotes = notes.map((note) =>
+      note.category === categoryId ? { ...note, category: "general" } : note
+    );
+    setNotes(updatedNotes);
+
+    // Then delete the category
+    deleteCategory(categoryId);
+
+    // If we're currently viewing the deleted category, switch to 'all'
+    if (activeCategory === categoryId) {
+      setActiveCategory("all");
+    }
+  };
+
   const filteredNotes =
     activeCategory === "all"
       ? notes
@@ -84,14 +103,16 @@ const App = () => {
             </div>
           </div>
           <CategoryFilter
-            categories={CATEGORIES}
+            categories={categories}
             activeCategory={activeCategory}
             onSelectCategory={setActiveCategory}
+            onAddCategory={addCategory}
+            onDeleteCategory={handleDeleteCategory}
           />
         </header>
 
         <main>
-          <NoteForm onAddNote={addNote} />
+          <NoteForm onAddNote={addNote} categories={categories} />
 
           {filteredNotes.length > 0 ? (
             filteredNotes.map((note) => (
@@ -100,6 +121,7 @@ const App = () => {
                 note={note}
                 onDelete={deleteNote}
                 onEdit={editNote}
+                categories={categories}
               />
             ))
           ) : (
@@ -113,6 +135,6 @@ const App = () => {
       </div>
     </div>
   );
-};
+}
 
 export default App;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CirclePlus } from "lucide-react";
 import CATEGORIES from "../../constants/categoty";
 
-const NoteForm = ({ onAddNote }) => {
+const NoteForm = ({ onAddNote, categories }) => {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("general");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -49,7 +49,7 @@ const NoteForm = ({ onAddNote }) => {
               onChange={(e) => setCategory(e.target.value)}
               className="p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
-              {Object.values(CATEGORIES).map((cat) => (
+              {Object.values(categories).map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.label}
                 </option>

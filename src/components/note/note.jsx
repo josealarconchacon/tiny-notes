@@ -2,15 +2,16 @@ import { useState } from "react";
 import CATEGORIES from "../../constants/categoty";
 import { Trash2 } from "lucide-react";
 
-const Note = ({ note, onDelete, onEdit }) => {
+const Note = ({ note, onDelete, onEdit, categories }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(note.content);
-
+  // Edit the note
   const handleEdit = () => {
     onEdit(note.id, editedContent);
     setIsEditing(false);
   };
 
+  // Handle key down event
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -18,12 +19,19 @@ const Note = ({ note, onDelete, onEdit }) => {
     }
   };
 
+  // Find the category details for this note
+  const categoryKey = Object.keys(categories).find(
+    (key) => categories[key].id === note.category
+  );
+  const category = categoryKey
+    ? categories[categoryKey]
+    : { icon: "📝", label: "Note" };
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-4">
       <div className="flex justify-between items-start mb-2">
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {CATEGORIES[note.category.toUpperCase()]?.icon || "📝"}{" "}
-          {CATEGORIES[note.category.toUpperCase()]?.label || "Note"}
+          {category.icon} {category.label}
         </span>
         <button
           onClick={() => onDelete(note.id)}
