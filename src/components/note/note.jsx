@@ -4,11 +4,17 @@ import { Trash2 } from "lucide-react";
 
 const Note = ({ note, onDelete, onEdit, categories }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(note.content);
+  const [editedContent, setEditedContent] = useState(
+    typeof note.content === "string"
+      ? note.content
+      : JSON.stringify(note.content)
+  );
   // Edit the note
   const handleEdit = () => {
-    onEdit(note.id, editedContent);
-    setIsEditing(false);
+    if (typeof editedContent === "string") {
+      onEdit(note.id, editedContent);
+      setIsEditing(false);
+    }
   };
 
   // Handle key down event
@@ -71,7 +77,9 @@ const Note = ({ note, onDelete, onEdit, categories }) => {
           onClick={() => setIsEditing(true)}
           className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap cursor-pointer"
         >
-          {note.content}
+          {typeof note.content === "string"
+            ? note.content
+            : JSON.stringify(note.content)}
         </p>
       )}
 

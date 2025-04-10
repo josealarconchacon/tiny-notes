@@ -1,12 +1,10 @@
 import useLocalStorage from "./hook/local-storage";
 import { useState, useEffect } from "react";
-import CATEGORIES from "./constants/categoty";
-import Note from "./components/note/note";
 import NoteForm from "./components/note-form/note-form";
-import CategoryFilter from "./components/filter/filter";
-import EmptyState from "./components/empty-state/empty-state";
-import ThemeToggle from "./components/theme-toggle/theme-toggle";
 import useCategories from "./hook/managing-categories";
+import Header from "./components/header/header";
+import NotesList from "./components/notes-list/notes-list";
+import Footer from "./components/footer/footer";
 
 function App() {
   const [notes, setNotes] = useLocalStorage("tinyNotes", []);
@@ -14,6 +12,23 @@ function App() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [offlineStatus, setOfflineStatus] = useState(navigator.onLine);
   const { categories, addCategory, deleteCategory } = useCategories();
+
+  // Ensure all notes have string content
+  useEffect(() => {
+    const hasNonStringContent = notes.some(
+      (note) => typeof note.content !== "string"
+    );
+    if (hasNonStringContent) {
+      const fixedNotes = notes.map((note) => ({
+        ...note,
+        content:
+          typeof note.content === "string"
+            ? note.content
+            : JSON.stringify(note.content),
+      }));
+      setNotes(fixedNotes);
+    }
+  }, [notes, setNotes]);
 
   // Handle offline/online status
   useEffect(() => {
@@ -43,7 +58,9 @@ function App() {
   };
 
   const addNote = (newNote) => {
-    setNotes([newNote, ...notes]);
+    if (typeof newNote.content === "string") {
+      setNotes([newNote, ...notes]);
+    }
   };
 
   const deleteNote = (id) => {
@@ -60,18 +77,14 @@ function App() {
     );
   };
 
-  // When a category is deleted, change the category of affected notes to 'general'
   const handleDeleteCategory = (categoryId) => {
-    // First, update any notes that use this category
     const updatedNotes = notes.map((note) =>
       note.category === categoryId ? { ...note, category: "general" } : note
     );
     setNotes(updatedNotes);
 
-    // Then delete the category
     deleteCategory(categoryId);
 
-    // If we're currently viewing the deleted category, switch to 'all'
     if (activeCategory === categoryId) {
       setActiveCategory("all");
     }
@@ -85,53 +98,29 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
       <div className="container mx-auto max-w-2xl p-4">
-        <header className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-              Tiny Notes
-            </h1>
-            <div className="flex items-center gap-3">
-              {!offlineStatus && (
-                <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 py-1 px-2 rounded">
-                  Offline Mode
-                </span>
-              )}
-              <ThemeToggle
-                darkMode={darkMode}
-                toggleDarkMode={toggleDarkMode}
-              />
-            </div>
-          </div>
-          <CategoryFilter
-            categories={categories}
-            activeCategory={activeCategory}
-            onSelectCategory={setActiveCategory}
-            onAddCategory={addCategory}
-            onDeleteCategory={handleDeleteCategory}
-          />
-        </header>
+        <Header
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+          offlineStatus={offlineStatus}
+          categories={categories}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+          addCategory={addCategory}
+          handleDeleteCategory={handleDeleteCategory}
+        />
 
         <main>
           <NoteForm onAddNote={addNote} categories={categories} />
-
-          {filteredNotes.length > 0 ? (
-            filteredNotes.map((note) => (
-              <Note
-                key={note.id}
-                note={note}
-                onDelete={deleteNote}
-                onEdit={editNote}
-                categories={categories}
-              />
-            ))
-          ) : (
-            <EmptyState activeCategory={activeCategory} />
-          )}
+          <NotesList
+            filteredNotes={filteredNotes}
+            onDelete={deleteNote}
+            onEdit={editNote}
+            categories={categories}
+            activeCategory={activeCategory}
+          />
         </main>
 
-        <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>© 2025 Tiny Notes App</p>
-        </footer>
+        <Footer />
       </div>
     </div>
   );
