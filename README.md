@@ -47,4 +47,4 @@ The application will open in your default browser at `http://localhost:3000`.
 - [ ] **Advanced Features**
   - [ ] Rich text editing
   - [ ] File attachments
-  - [ ] Search functionality
+  - [x] Search functionality
